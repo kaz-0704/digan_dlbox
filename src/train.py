@@ -35,7 +35,7 @@ def setup_training_loop_kwargs(
     # General options (not included in desc).
     gpus       = None, # Number of GPUs: <int>, default = 1 gpu
     snap       = None, # Snapshot interval: <int>, default = 50 ticks
-    metrics    = None, # List of metric names: [], ['fid50k_full'] (default), ...
+    metrics    = ['fvd_proxy'], # List of metric names: [], ['fid50k_full'] (default), ...
     seed       = None, # Random seed: <int>, default = 0
 
     # Dataset.

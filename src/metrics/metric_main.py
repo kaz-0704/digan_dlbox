@@ -80,7 +80,7 @@ def report_metric(result_dict, run_dir=None, snapshot_pkl=None):
 @register_metric
 def fvd_proxy(opts):
     opts.dataset_kwargs.update(max_size=None, xflip=False, train=False)
-    fvd = frechet_video_distance.compute_fvd(opts, num_videos=512, num_iter=5)
+    fvd = frechet_video_distance.compute_fvd(opts, num_videos=96, num_iter=5)
     return dict(fvd_proxy=fvd)
 
 @register_metric

@@ -25,6 +25,7 @@ def _eval_fvd(opts, i3d, G, dataset, device, num_videos=512):
     grid_z = torch.randn([num_videos_per_gpu, G.z_dim], device=device).split(1)
 
     if G.c_dim > 0:
+        print(f"\n######################3\nlen(dataset):{len(dataset)}\n#########################\n")
         grid_c = [dataset.get_label(np.random.randint(len(dataset))) for _i in range(num_videos_per_gpu)]
         grid_c = torch.from_numpy(np.stack(grid_c)).pin_memory().to(opts.device).split(1)
     else:
@@ -82,4 +83,5 @@ def compute_fvd(opts, num_videos=512, num_iter=5):
     if opts.rank != 0:
         return float('nan')
 
+    print(f"\n#######################\nsum(fvd)/float(num_iter): {sum(fvd)/float(num_iter)}\n############################\n")
     return sum(fvd)/float(num_iter)

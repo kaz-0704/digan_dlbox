@@ -550,7 +550,9 @@ class ImageFolderDataset(Dataset):
                 split = 'train'
             else:
                 split = 'test'
+            print(f"\n#############################\npath:{path}\nnframes:{nframes}\nclass_to_idx:{class_to_idx}\n###############################\n")
             imgs = make_imageclip_dataset(path, nframes, class_to_idx, False, split)
+            print(f"\n######################\nlen(imgs):{len(imgs)}\n#########################\n")
         else:
             imgs = make_imageclip_dataset(path, nframes, class_to_idx, False)
 
@@ -571,10 +573,12 @@ class ImageFolderDataset(Dataset):
         self.xflip = super_kwargs["xflip"]
         self.return_vid = return_vid
         self.shuffle_indices = [i for i in range(self._total_size)]
+        print(f"\n######################\nlen(imgs):{len(imgs)}\n#########################\n")
+        print(f"\n######################\n_total_size:{self._total_size}\n#########################\n")
         self.to_tensor = transforms.ToTensor()
         random.shuffle(self.shuffle_indices)
 
-        if 'kinetics' in self._path or 'KINETICS' in self._path or 'SKY' in self._path:      
+        if 'kinetics' in self._path or 'KINETICS' in self._path or 'SKY' in self._path or True:
             if train:
                 dir_path = os.path.join(self._path, 'train')
             else:
@@ -582,7 +586,8 @@ class ImageFolderDataset(Dataset):
         
         if os.path.isdir(self._path):
             self._type = 'dir'
-            self._all_fnames = {os.path.relpath(os.path.join(root, fname), start=dir_path) for root, _dirs, files in os.walk(dir_path) for fname in files}        
+            self._all_fnames = {os.path.relpath(os.path.join(root, fname), start=dir_path) for root, _dirs, files in os.walk(dir_path) for fname in files}
+            # print(f"###_all_fnames:{self._all_fnames}")
         elif self._file_ext(self._path) == '.zip':
             self._type = 'zip'
             self._all_fnames = set(self._get_zipfile().namelist())
@@ -590,7 +595,8 @@ class ImageFolderDataset(Dataset):
             raise IOError('Path must point to a directory or zip')
 
         PIL.Image.init()
-        self._image_fnames = sorted(fname for fname in self._all_fnames if self._file_ext(fname) in PIL.Image.EXTENSION)
+        self._image_fnames = sorted(fname for fname in self._all_fnames)
+        print(f"###_image_fnames:{len(self._image_fnames)}")
         if len(self._image_fnames) == 0:
             raise IOError('No image files found in the specified path')
 
@@ -670,6 +676,8 @@ class ImageFolderDataset(Dataset):
         Returns:
             tuple: (image, target) where target is class_index of the target class.
         """
+        # print(f"\n######################\nindex:{index}\n#########################\n")
+        # if index > 37 : index = 37
         index = self.shuffle_indices[index]
 
         # clip is a list of 16 frames
@@ -703,4 +711,5 @@ class ImageFolderDataset(Dataset):
         return img0.copy(), img1.copy(), target0, target1, float(max(frames) - min(frames)) / (self.nframes - 1)
 
     def __len__(self):
+        # print(f"\n######################\n__len___ total_size:{self._total_size}\n#########################\n")
         return self._total_size

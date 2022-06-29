@@ -21,7 +21,7 @@ torch.set_grad_enabled(False)
 @click.pass_context
 @click.option('--network_pkl', help='Network pickle filename', required=True)
 @click.option('--timesteps', type=int, help='Timesteps', default=16, show_default=True)
-@click.option('--num_videos', type=int, help='Number of images to generate', default=100, show_default=True)
+@click.option('--num_videos', type=int, help='Number of images to generate', default=25, show_default=True)
 @click.option('--seed', type=int, help='Random seed', default=42, metavar='DIR')
 @click.option('--outdir', help='Where to save the output images', type=str, required=True, metavar='DIR')
 def generate_videos(

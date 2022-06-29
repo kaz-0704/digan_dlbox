@@ -27,6 +27,8 @@ from src.metrics import metric_main
 
 from einops import rearrange
 
+from tqdm import tqdm
+
 
 def convert_batch(img):
     return rearrange(img, '(n b) c h w -> (b n) c h w', n=2)
@@ -277,6 +279,7 @@ def training_loop(
         progress_fn(0, total_kimg)
 
     while True:
+        print("\n##########################  Loop Head  #######################")
         # Fetch training data.
         with torch.autograd.profiler.record_function('data_fetch'):
             phase_real_img_0, phase_real_img_1, phase_real_c_0, phase_real_c_1, times = next(training_set_iterator)
@@ -298,8 +301,10 @@ def training_loop(
             all_gen_c = torch.from_numpy(np.stack(all_gen_c)).pin_memory().to(device)
             all_gen_c = [phase_gen_c.split(batch_gpu) for phase_gen_c in all_gen_c.split(batch_size)]
 
-        # Execute training phases.
-        for phase, phase_gen_z, phase_gen_c in zip(phases, all_gen_z, all_gen_c):
+        # Execute training phases.i
+        bar = tqdm(total = len(phases))
+        bar.set_description("Execute training phases")
+        for phase, phase_gen_z, phase_gen_c in tqdm(zip(phases, all_gen_z, all_gen_c)):
             if batch_idx % phase.interval != 0:
                 continue
 
@@ -324,6 +329,8 @@ def training_loop(
                 phase.opt.step()
             if phase.end_event is not None:
                 phase.end_event.record(torch.cuda.current_stream(device))
+
+            bar.update()
 
         # Update G_ema.
         with torch.autograd.profiler.record_function('Gema'):
@@ -386,6 +393,7 @@ def training_loop(
         snapshot_data = None
         if (network_snapshot_ticks is not None) and (done or cur_tick % network_snapshot_ticks == 0):
             snapshot_data = dict(training_set_kwargs=dict(training_set_kwargs))
+            print(f"\n#############  snapshot_data: {snapshot_data}  ##################")
             for name, module in [('G', G), ('D', D), ('G_ema', G_ema), ('augment_pipe', augment_pipe)]:
                 if module is not None:
                     if num_gpus > 1:
@@ -398,11 +406,14 @@ def training_loop(
                 with open(snapshot_pkl, 'wb') as f:
                     pickle.dump(snapshot_data, f)
 
-        # Evaluate metrics.
+        # Evaluate metrics
+        print(f'\n#################################\nEvaluating\n###############################\n')
         if (snapshot_data is not None) and (len(metrics) > 0):
             if rank == 0:
                 project_name = os.path.basename(os.path.dirname(run_dir))
-                print(f'Evaluating metrics for {project_name} ...')
+                print(f'\nEvaluating metrics for {project_name} ...\n')
+            bar = tqdm(total = len(metrics))
+            bar.set_description("Evaluate metrics.")
             for metric in metrics:
                 result_dict = metric_main.calc_metric(metric=metric, G=snapshot_data['G_ema'],
                     dataset_kwargs=training_set_kwargs, num_gpus=num_gpus, rank=rank, device=device)
@@ -410,6 +421,8 @@ def training_loop(
                     metric_main.report_metric(result_dict, run_dir=run_dir, snapshot_pkl=snapshot_pkl)
 
                 stats_metrics.update(result_dict.results)
+                print("Done")
+                bar.update()
 
         del snapshot_data # conserve memory
 
